@@ -10,3 +10,4 @@ tên file player json phải viết liền không khoảng trắng.. nếu khôn
 1.6.1 sửa lỗi không mở được smb khi chọn thư mục tạo file
 1.7 sửa phần tên nếu có dấu ngoặc (thuyet minh) về sau phần năm để dễ nhận diện, phần sau năm giữ nguyên, bỏ file nfo
 1.8.0 Lưu lại thư mục lưu strm. sửa lại hàm player và showfshalink để play film qua tmdb helper hay bất cứ cái chọn fshare đều ghi nhận trên trakt, scan 1 file không cần scan cả thư viện. Sửa để có thể tìm tvshow chuẩn 
+1.9.0 thêm chức năng download fshare, tên file theo quy tắc file strm, lưu cùng thư mục.
