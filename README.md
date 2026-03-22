@@ -11,3 +11,5 @@ tên file player json phải viết liền không khoảng trắng.. nếu khôn
 1.7 sửa phần tên nếu có dấu ngoặc (thuyet minh) về sau phần năm để dễ nhận diện, phần sau năm giữ nguyên, bỏ file nfo
 1.8.0 Lưu lại thư mục lưu strm. sửa lại hàm player và showfshalink để play film qua tmdb helper hay bất cứ cái chọn fshare đều ghi nhận trên trakt, scan 1 file không cần scan cả thư viện. Sửa để có thể tìm tvshow chuẩn 
 1.9.0 thêm chức năng download fshare, tên file theo quy tắc file strm, lưu cùng thư mục. player 1.9 đã sửa để tmdb có cài tiếng việt thì vẫn search fshare theo ngôn ngữ gốc tiếng anh.
+1.10 Cơ cấu lại menu, thêm duyệt công đồng bằng menu từ gg sheet. Format 7 cột trong đó 2 cột đầu bắt buộc Title	| link folder/file fdsare hoặc google sheet	| Thumbnail URL	| Descriptions	| Fanart URL	|Genre | rate
+link có thể là gf sheet khác hoặc fshare file/folder 
