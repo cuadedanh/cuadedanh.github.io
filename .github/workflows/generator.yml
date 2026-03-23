@@ -1,0 +1,79 @@
+name: Auto Index Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'index.html'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Generate Beautiful Index
+        run: |
+          python - <<EOF
+          import os
+
+          # Danh sách file loại trừ không hiện lên web
+          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE']
+          
+          files = [f for f in os.listdir('.') if os.path.isfile(f) and f not in exclude]
+          files.sort()
+
+          html_content = """
+          <!DOCTYPE html>
+          <html lang="vi">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>File Downloader</title>
+              <style>
+                  body { font-family: sans-serif; margin: 40px; background: #f4f4f9; }
+                  .container { max-width: 600px; background: white; padding: 20px; border-radius: 8px; shadow: 0 2px 5px rgba(0,0,0,0.1); }
+                  h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                  ul { list-style: none; padding: 0; }
+                  li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+                  a { text-decoration: none; color: #007bff; font-weight: bold; }
+                  a:hover { color: #0056b3; }
+                  .btn-dl { background: #28a745; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.9em; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>Danh sách File tải về</h1>
+                  <ul>
+          """
+
+          for file in files:
+              # Thuộc tính 'download' sẽ ép trình duyệt tải về thay vì mở ra
+              html_content += f'<li><span>{file}</span> <a href="{file}" download class="btn-dl">Tải về</a></li>\n'
+
+          html_content += """
+                  </ul>
+                  <p style="font-size: 0.8em; color: #888;">Cập nhật tự động bởi GitHub Actions</p>
+              </div>
+          </body>
+          </html>
+          """
+
+          with open("index.html", "w", encoding="utf-8") as f:
+              f.write(html_content)
+          EOF
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Auto-generate index.html with download links" || exit 0
+          git push
