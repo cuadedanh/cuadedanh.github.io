@@ -9,13 +9,30 @@ on:
       - 'addons.xml'
       - 'addons.xml.md5'
       - '*.zip'
+  workflow_dispatch: # Cho phép bạn bấm nút chạy thủ công từ tab Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Kodi Repo
         uses: actions/checkout@v3
+
+      # --- LẤY ADDON TỪ REPO KHÁC CỦA BẠN ---
+      - name: Clone Your Own Addon
+        run: |
+          # Thay 'username' và 'ten-repo-addon' bằng thông tin thật của bạn
+          git clone --depth 1 https://github.com temp_addon
+          
+          # Xóa thư mục .git để tránh lỗi xung đột giữa 2 repo
+          rm -rf temp_addon/.git
+          
+          # Di chuyển nội dung addon ra thư mục gốc để nén (ví dụ đặt tên thư mục là plugin.video.name)
+          # Lưu ý: Thay 'plugin.video.name' bằng đúng ID addon của bạn
+          mkdir -p plugin.video.name
+          cp -r temp_addon/* plugin.video.name/
+          rm -rf temp_addon
+      # --- KẾT THÚC ---
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,23 +46,20 @@ jobs:
           import hashlib
           import zipfile
 
-          # 1. Khai báo các file loại trừ
           exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
           addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
 
-          # 2. Quét các thư mục để Nén và gom XML
+          # 1. Quét các thư mục (bao gồm cả thư mục vừa clone về) để nén
           for dir_name in os.listdir('.'):
               if os.path.isdir(dir_name) and dir_name not in exclude:
                   xml_path = os.path.join(dir_name, 'addon.xml')
                   if os.path.exists(xml_path):
-                      # Đọc nội dung XML của addon/repo để cho vào file tổng
                       with open(xml_path, 'r', encoding='utf-8') as f:
                           content = f.read()
                           if "<?xml" in content:
                               content = content.split('?>', 1)[-1].strip()
                           addons_xml += content + "\n"
                       
-                      # Nén thư mục thành file .zip
                       zip_name = f"{dir_name}.zip"
                       with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                           for root, dirs, files in os.walk(dir_name):
@@ -54,7 +68,7 @@ jobs:
 
           addons_xml += u"</addons>\n"
 
-          # 3. Xuất file hệ thống Kodi
+          # 2. Xuất file hệ thống Kodi
           with open("addons.xml", "w", encoding="utf-8") as f:
               f.write(addons_xml)
           
@@ -62,7 +76,7 @@ jobs:
           with open("addons.xml.md5", "w") as f:
               f.write(md5_hash)
 
-          # 4. Tạo Index.html: Quét TẤT CẢ các file .zip có trong thư mục gốc
+          # 3. Tạo Index.html liệt kê TẤT CẢ file .zip
           all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
           all_zips.sort()
 
@@ -81,5 +95,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add addons.xml addons.xml.md5 index.html *.zip
-          git commit -m "Auto-update Repo and Zips" || exit 0
+          # Nếu bạn muốn lưu cả thư mục code addon lại trong repo chính, hãy thêm dòng: git add plugin.video.name
+          git commit -m "Auto-update Repo with external addon" || exit 0
           git push
