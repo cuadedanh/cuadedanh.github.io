@@ -29,8 +29,8 @@ jobs:
           
           # Di chuyển nội dung addon ra thư mục gốc để nén (ví dụ đặt tên thư mục là plugin.video.name)
           # Lưu ý: Thay 'plugin.video.name' bằng đúng ID addon của bạn
-          mkdir -p plugin.video.name
-          cp -r temp_addon/* plugin.video.name/
+          mkdir -p plugin.video.myimdbfshare
+          cp -r temp_addon/* plugin.video.myimdbfshare/
           rm -rf temp_addon
       # --- KẾT THÚC ---
 
