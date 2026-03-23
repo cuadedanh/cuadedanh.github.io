@@ -20,22 +20,27 @@ jobs:
 
       - name: Clone MyIMDbFshare Addon
         run: |
-          # Xóa sạch dấu vết cũ
+          # 1. Xóa sạch dấu vết cũ
           rm -rf temp_addon plugin.video.myimdbfshare
           
-          # Tải addon (nếu repo private sẽ báo lỗi ở đây)
+          # 2. Tải addon về thư mục tạm
           git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
           
-          # Kiểm tra xem file addon.xml có tồn tại trong repo vừa tải không
-          if [ ! -f "temp_addon/addon.xml" ]; then
+          # 3. Tìm thư mục chứa file addon.xml (để xử lý trường hợp bị lồng thư mục con)
+          ADDON_PATH=$(find temp_addon -name "addon.xml" -printf '%h' -quit)
+          
+          if [ -z "$ADDON_PATH" ]; then
             echo "LỖI: Không tìm thấy file addon.xml trong repo nguồn!"
             exit 1
           fi
           
-          # Copy sang thư mục chính
+          # 4. Tạo thư mục đích đúng tên ID
           mkdir -p plugin.video.myimdbfshare
-          cp -a temp_addon/. plugin.video.myimdbfshare/
-          rm -rf temp_addon/.git
+          
+          # 5. Copy nội dung từ thư mục chứa addon.xml vào thư mục đích
+          cp -a "$ADDON_PATH"/. plugin.video.myimdbfshare/
+          
+          # 6. Dọn dẹp
           rm -rf temp_addon
 
       - name: Set up Python
