@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.myimdbfshare"
        name="Top 250 IMDB Fshare Finder"
-       version="1.10.1"
+       version="1.2.1"
        provider-name="cuadedanh@gmail.com">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
