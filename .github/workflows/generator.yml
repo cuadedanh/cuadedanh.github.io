@@ -41,7 +41,7 @@ jobs:
           cp -a "$ADDON_PATH"/. plugin.video.myimdbfshare/
           
           # 6. Dọn dẹp
-          rm -rf temp_addon
+          # rm -rf temp_addon
 
       - name: Set up Python
         uses: actions/setup-python@v5
