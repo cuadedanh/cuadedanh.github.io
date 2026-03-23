@@ -1,4 +1,4 @@
-name: Auto Index Generator
+name: Kodi Repo & Zip Generator
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - main
     paths-ignore:
       - 'index.html'
+      - 'addons.xml'
+      - 'addons.xml.md5'
+      - '*.zip'
 
 jobs:
   build:
@@ -19,27 +22,66 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Generate Kodi Friendly Index
+      - name: Auto Zip and Generate Metadata
         run: |
           python - <<EOF
           import os
-          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'generator.yml']
-          items = [f for f in os.listdir('.') if f not in exclude]
-          items.sort()
-          html_content = "<html><head><title>Kodi Repo Source</title></head><body>\n"
-          html_content += "<h1>Index of /</h1>\n<hr><pre>\n"
-          for item in items:
-              display_name = item + "/" if os.path.isdir(item) else item
-              html_content += f'<a href="{item}">{display_name}</a>\n'
-          html_content += "</pre><hr></body></html>"
+          import hashlib
+          import zipfile
+
+          # 1. Khai báo các file loại trừ
+          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
+          addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
+
+          # 2. Quét các thư mục để Nén và gom XML
+          found_items = []
+          for dir_name in os.listdir('.'):
+              if os.path.isdir(dir_name) and dir_name not in exclude:
+                  xml_path = os.path.join(dir_name, 'addon.xml')
+                  if os.path.exists(xml_path):
+                      # Đọc nội dung XML của addon/repo để cho vào file tổng
+                      with open(xml_path, 'r', encoding='utf-8') as f:
+                          content = f.read()
+                          # Loại bỏ tag XML header nếu có
+                          if "<?xml" in content:
+                              content = content.split('?>', 1)[-1].strip()
+                          addons_xml += content + "\n"
+                      
+                      # Nén thư mục thành file .zip
+                      zip_name = f"{dir_name}.zip"
+                      with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                          for root, dirs, files in os.walk(dir_name):
+                              for file in files:
+                                  # Đảm bảo cấu trúc file trong zip là chuẩn Kodi
+                                  zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '..')))
+                      found_items.append(zip_name)
+
+          addons_xml += u"</addons>\n"
+
+          # 3. Xuất file hệ thống Kodi
+          with open("addons.xml", "w", encoding="utf-8") as f:
+              f.write(addons_xml)
+          
+          md5_hash = hashlib.md5(addons_xml.encode('utf-8')).hexdigest()
+          with open("addons.xml.md5", "w") as f:
+              f.write(md5_hash)
+
+          # 4. Tạo Index.html cho người dùng tải zip
+          found_items.sort()
+          html = "<html><head><title>My Kodi Repository</title></head><body>"
+          html += "<h1>Index of Kodi Addons</h1><hr><pre>"
+          for zip_file in found_items:
+              html += f'<a href="{zip_file}">{zip_file}</a>\n'
+          html += "</pre><hr></body></html>"
+          
           with open("index.html", "w", encoding="utf-8") as f:
-              f.write(html_content)
+              f.write(html)
           EOF
 
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Update Kodi index" || exit 0
+          git add addons.xml addons.xml.md5 index.html *.zip
+          git commit -m "Auto-update Repo and Zips" || exit 0
           git push
