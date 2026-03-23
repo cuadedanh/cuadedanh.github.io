@@ -1,28 +1,45 @@
+name: Auto Index Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'index.html'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
       - name: Generate Kodi Friendly Index
         run: |
           python - <<EOF
           import os
-
-          # Loại trừ các file hệ thống và cấu hình
           exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'generator.yml']
-          
-          # Lấy danh sách file và thư mục
           items = [f for f in os.listdir('.') if f not in exclude]
           items.sort()
-
-          # Cấu trúc HTML siêu tối giản cho Kodi
           html_content = "<html><head><title>Kodi Repo Source</title></head><body>\n"
-          html_content += "<h1>Index of /</h1>\n"
-          html_content += "<hr><pre>\n"
-
-          # Thêm link cho từng item (Kodi cần định dạng chuẩn Index of)
+          html_content += "<h1>Index of /</h1>\n<hr><pre>\n"
           for item in items:
-              # Kiểm tra nếu là thư mục thì thêm dấu /
               display_name = item + "/" if os.path.isdir(item) else item
               html_content += f'<a href="{item}">{display_name}</a>\n'
-
           html_content += "</pre><hr></body></html>"
-
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(html_content)
           EOF
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Update Kodi index" || exit 0
+          git push
