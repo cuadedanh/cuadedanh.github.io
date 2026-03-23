@@ -20,7 +20,7 @@ jobs:
 
       - name: Clone MyIMDbFshare Addon
         run: |
-          git clone --depth 1 https://github.com https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
+          git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
           rm -rf temp_addon/.git
           mkdir -p plugin.video.myimdbfshare
           cp -r temp_addon/* plugin.video.myimdbfshare/
