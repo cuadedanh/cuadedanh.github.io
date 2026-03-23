@@ -9,29 +9,25 @@ on:
       - 'addons.xml'
       - 'addons.xml.md5'
       - '*.zip'
-  workflow_dispatch: # Cho phép bấm nút chạy thủ công từ tab Actions
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Kodi Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Đã cập nhật lên v4
 
-      # --- BẮT ĐẦU CLONE ADDON MYIMDBFSHARE ---
       - name: Clone MyIMDbFshare Addon
         run: |
-          # THAY 'username' BẰNG TÊN GITHUB CỦA BẠN DƯỚI ĐÂY
           git clone --depth 1 https://github.com temp_addon
-          
           rm -rf temp_addon/.git
           mkdir -p plugin.video.myimdbfshare
           cp -r temp_addon/* plugin.video.myimdbfshare/
           rm -rf temp_addon
-      # --- KẾT THÚC CLONE ---
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Đã cập nhật lên v5
         with:
           python-version: '3.x'
 
@@ -45,7 +41,6 @@ jobs:
           exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
           addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
 
-          # 1. Quét thư mục để nén zip và gom XML
           for dir_name in os.listdir('.'):
               if os.path.isdir(dir_name) and dir_name not in exclude:
                   xml_path = os.path.join(dir_name, 'addon.xml')
@@ -64,7 +59,6 @@ jobs:
 
           addons_xml += u"</addons>\n"
 
-          # 2. Xuất file metadata cho Kodi
           with open("addons.xml", "w", encoding="utf-8") as f:
               f.write(addons_xml)
           
@@ -72,7 +66,6 @@ jobs:
           with open("addons.xml.md5", "w") as f:
               f.write(md5_hash)
 
-          # 3. Tạo index.html liệt kê TẤT CẢ các file .zip
           all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
           all_zips.sort()
 
@@ -91,6 +84,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add addons.xml addons.xml.md5 index.html *.zip
-          # Bạn có thể chọn lưu folder code hoặc không. Ở đây tôi chỉ push file nén và metadata.
           git commit -m "Update Repo: plugin.video.myimdbfshare" || exit 0
           git push
