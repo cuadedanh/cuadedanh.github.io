@@ -1,79 +1,28 @@
-name: Auto Index Generator
-
-on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'index.html'
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Generate Beautiful Index
+      - name: Generate Kodi Friendly Index
         run: |
           python - <<EOF
           import os
 
-          # Danh sách file loại trừ không hiện lên web
-          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE']
+          # Loại trừ các file hệ thống và cấu hình
+          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'generator.yml']
           
-          files = [f for f in os.listdir('.') if os.path.isfile(f) and f not in exclude]
-          files.sort()
+          # Lấy danh sách file và thư mục
+          items = [f for f in os.listdir('.') if f not in exclude]
+          items.sort()
 
-          html_content = """
-          <!DOCTYPE html>
-          <html lang="vi">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>File Downloader</title>
-              <style>
-                  body { font-family: sans-serif; margin: 40px; background: #f4f4f9; }
-                  .container { max-width: 600px; background: white; padding: 20px; border-radius: 8px; shadow: 0 2px 5px rgba(0,0,0,0.1); }
-                  h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-                  ul { list-style: none; padding: 0; }
-                  li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-                  a { text-decoration: none; color: #007bff; font-weight: bold; }
-                  a:hover { color: #0056b3; }
-                  .btn-dl { background: #28a745; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.9em; }
-              </style>
-          </head>
-          <body>
-              <div class="container">
-                  <h1>Danh sách File tải về</h1>
-                  <ul>
-          """
+          # Cấu trúc HTML siêu tối giản cho Kodi
+          html_content = "<html><head><title>Kodi Repo Source</title></head><body>\n"
+          html_content += "<h1>Index of /</h1>\n"
+          html_content += "<hr><pre>\n"
 
-          for file in files:
-              # Thuộc tính 'download' sẽ ép trình duyệt tải về thay vì mở ra
-              html_content += f'<li><span>{file}</span> <a href="{file}" download class="btn-dl">Tải về</a></li>\n'
+          # Thêm link cho từng item (Kodi cần định dạng chuẩn Index of)
+          for item in items:
+              # Kiểm tra nếu là thư mục thì thêm dấu /
+              display_name = item + "/" if os.path.isdir(item) else item
+              html_content += f'<a href="{item}">{display_name}</a>\n'
 
-          html_content += """
-                  </ul>
-                  <p style="font-size: 0.8em; color: #888;">Cập nhật tự động bởi GitHub Actions</p>
-              </div>
-          </body>
-          </html>
-          """
+          html_content += "</pre><hr></body></html>"
 
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(html_content)
           EOF
-
-      - name: Commit and Push
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Auto-generate index.html with download links" || exit 0
-          git push
