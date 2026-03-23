@@ -1,17 +1,85 @@
+name: Kodi Repo & Zip Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'index.html'
+      - 'addons.xml'
+      - 'addons.xml.md5'
+      - '*.zip'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kodi Repo
+        uses: actions/checkout@v4
+
       - name: Clone MyIMDbFshare Addon
         run: |
-          # 1. Xóa sạch dấu vết cũ nếu có
           rm -rf temp_addon plugin.video.myimdbfshare
-          
-          # 2. Tải bản mới nhất
-          git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
-          
-          # 3. Xóa thư mục .git của addon ngay lập tức
+          git clone --depth 1 https://github.com temp_addon
           rm -rf temp_addon/.git
-          
-          # 4. Copy an toàn (dùng dấu chấm thay cho dấu sao)
           mkdir -p plugin.video.myimdbfshare
           cp -a temp_addon/. plugin.video.myimdbfshare/
-          
-          # 5. Dọn dẹp
           rm -rf temp_addon
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Auto Zip and Generate Metadata
+        run: |
+          python - <<EOF
+          import os
+          import hashlib
+          import zipfile
+
+          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
+          addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
+
+          for dir_name in os.listdir('.'):
+              if os.path.isdir(dir_name) and dir_name not in exclude:
+                  xml_path = os.path.join(dir_name, 'addon.xml')
+                  if os.path.exists(xml_path):
+                      with open(xml_path, 'r', encoding='utf-8') as f:
+                          content = f.read()
+                          if "<?xml" in content:
+                              content = content.split('?>', 1)[-1].strip()
+                          addons_xml += content + "\n"
+                      
+                      zip_name = f"{dir_name}.zip"
+                      with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                          for root, dirs, files in os.walk(dir_name):
+                              for file in files:
+                                  zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '..')))
+
+          addons_xml += u"</addons>\n"
+          with open("addons.xml", "w", encoding="utf-8") as f:
+              f.write(addons_xml)
+          
+          md5_hash = hashlib.md5(addons_xml.encode('utf-8')).hexdigest()
+          with open("addons.xml.md5", "w") as f:
+              f.write(md5_hash)
+
+          all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
+          all_zips.sort()
+          html = "<html><head><title>Kodi Repo</title></head><body><h1>Index of /</h1><hr><pre>"
+          for z in all_zips:
+              html += f'<a href="{z}">{z}</a>\n'
+          html += "</pre><hr></body></html>"
+          with open("index.html", "w", encoding="utf-8") as f:
+              f.write(html)
+          EOF
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add addons.xml addons.xml.md5 index.html *.zip
+          git commit -m "Update Repo: plugin.video.myimdbfshare" || exit 0
+          git push
