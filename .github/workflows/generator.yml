@@ -34,7 +34,6 @@ jobs:
           addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
 
           # 2. Quét các thư mục để Nén và gom XML
-          found_items = []
           for dir_name in os.listdir('.'):
               if os.path.isdir(dir_name) and dir_name not in exclude:
                   xml_path = os.path.join(dir_name, 'addon.xml')
@@ -42,7 +41,6 @@ jobs:
                       # Đọc nội dung XML của addon/repo để cho vào file tổng
                       with open(xml_path, 'r', encoding='utf-8') as f:
                           content = f.read()
-                          # Loại bỏ tag XML header nếu có
                           if "<?xml" in content:
                               content = content.split('?>', 1)[-1].strip()
                           addons_xml += content + "\n"
@@ -52,9 +50,7 @@ jobs:
                       with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                           for root, dirs, files in os.walk(dir_name):
                               for file in files:
-                                  # Đảm bảo cấu trúc file trong zip là chuẩn Kodi
                                   zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '..')))
-                      found_items.append(zip_name)
 
           addons_xml += u"</addons>\n"
 
@@ -66,11 +62,13 @@ jobs:
           with open("addons.xml.md5", "w") as f:
               f.write(md5_hash)
 
-          # 4. Tạo Index.html cho người dùng tải zip
-          found_items.sort()
+          # 4. Tạo Index.html: Quét TẤT CẢ các file .zip có trong thư mục gốc
+          all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
+          all_zips.sort()
+
           html = "<html><head><title>My Kodi Repository</title></head><body>"
           html += "<h1>Index of Kodi Addons</h1><hr><pre>"
-          for zip_file in found_items:
+          for zip_file in all_zips:
               html += f'<a href="{zip_file}">{zip_file}</a>\n'
           html += "</pre><hr></body></html>"
           
