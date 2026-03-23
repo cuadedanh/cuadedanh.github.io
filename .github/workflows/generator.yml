@@ -24,7 +24,7 @@ jobs:
           rm -rf temp_addon plugin.video.myimdbfshare
           
           # Tải addon (nếu repo private sẽ báo lỗi ở đây)
-          git clone --depth 1 https://github.com temp_addon
+          git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
           
           # Kiểm tra xem file addon.xml có tồn tại trong repo vừa tải không
           if [ ! -f "temp_addon/addon.xml" ]; then
