@@ -9,7 +9,7 @@ on:
       - 'addons.xml'
       - 'addons.xml.md5'
       - '*.zip'
-  workflow_dispatch: # Cho phép bạn bấm nút chạy thủ công từ tab Actions
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công từ tab Actions
 
 jobs:
   build:
@@ -18,21 +18,17 @@ jobs:
       - name: Checkout Kodi Repo
         uses: actions/checkout@v3
 
-      # --- LẤY ADDON TỪ REPO KHÁC CỦA BẠN ---
-      - name: Clone Your Own Addon
+      # --- BẮT ĐẦU CLONE ADDON MYIMDBFSHARE ---
+      - name: Clone MyIMDbFshare Addon
         run: |
-          # Thay 'username' và 'ten-repo-addon' bằng thông tin thật của bạn
+          # THAY 'username' BẰNG TÊN GITHUB CỦA BẠN DƯỚI ĐÂY
           git clone --depth 1 https://github.com temp_addon
           
-          # Xóa thư mục .git để tránh lỗi xung đột giữa 2 repo
           rm -rf temp_addon/.git
-          
-          # Di chuyển nội dung addon ra thư mục gốc để nén (ví dụ đặt tên thư mục là plugin.video.name)
-          # Lưu ý: Thay 'plugin.video.name' bằng đúng ID addon của bạn
           mkdir -p plugin.video.myimdbfshare
           cp -r temp_addon/* plugin.video.myimdbfshare/
           rm -rf temp_addon
-      # --- KẾT THÚC ---
+      # --- KẾT THÚC CLONE ---
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -49,7 +45,7 @@ jobs:
           exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
           addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
 
-          # 1. Quét các thư mục (bao gồm cả thư mục vừa clone về) để nén
+          # 1. Quét thư mục để nén zip và gom XML
           for dir_name in os.listdir('.'):
               if os.path.isdir(dir_name) and dir_name not in exclude:
                   xml_path = os.path.join(dir_name, 'addon.xml')
@@ -68,7 +64,7 @@ jobs:
 
           addons_xml += u"</addons>\n"
 
-          # 2. Xuất file hệ thống Kodi
+          # 2. Xuất file metadata cho Kodi
           with open("addons.xml", "w", encoding="utf-8") as f:
               f.write(addons_xml)
           
@@ -76,7 +72,7 @@ jobs:
           with open("addons.xml.md5", "w") as f:
               f.write(md5_hash)
 
-          # 3. Tạo Index.html liệt kê TẤT CẢ file .zip
+          # 3. Tạo index.html liệt kê TẤT CẢ các file .zip
           all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
           all_zips.sort()
 
@@ -95,6 +91,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add addons.xml addons.xml.md5 index.html *.zip
-          # Nếu bạn muốn lưu cả thư mục code addon lại trong repo chính, hãy thêm dòng: git add plugin.video.name
-          git commit -m "Auto-update Repo with external addon" || exit 0
+          # Bạn có thể chọn lưu folder code hoặc không. Ở đây tôi chỉ push file nén và metadata.
+          git commit -m "Update Repo: plugin.video.myimdbfshare" || exit 0
           git push
