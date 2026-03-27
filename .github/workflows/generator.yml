@@ -1,3 +1,52 @@
+name: Kodi Repo & Zip Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'index.html'
+      - 'addons.xml'
+      - 'addons.xml.md5'
+      - '*.zip'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kodi Repo
+        uses: actions/checkout@v4
+
+      - name: Clone MyIMDbFshare Addon
+        run: |
+          # 1. Xóa sạch dấu vết cũ
+          rm -rf temp_addon plugin.video.myimdbfshare
+          
+          # 2. Tải addon về thư mục tạm
+          git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
+          
+          # 3. Tìm thư mục chứa file addon.xml (để xử lý trường hợp bị lồng thư mục con)
+          ADDON_PATH=$(find temp_addon -name "addon.xml" -printf '%h' -quit)
+          
+          if [ -z "$ADDON_PATH" ]; then
+            echo "LỖI: Không tìm thấy file addon.xml trong repo nguồn!"
+            exit 1
+          fi
+          
+          # 4. Tạo thư mục đích đúng tên ID
+          mkdir -p plugin.video.myimdbfshare
+          
+          # 5. Copy nội dung từ thư mục chứa addon.xml vào thư mục đích
+          cp -a "$ADDON_PATH"/. plugin.video.myimdbfshare/
+          
+          # 6. Dọn dẹp
+          rm -rf temp_addon
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Auto Zip and Generate Metadata
         run: |
           python - <<EOF
