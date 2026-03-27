@@ -22,22 +22,23 @@
     </assets>
   </extension>
 </addon>
-<addon id="repository.cuadedanh" name="cuadedanh" version="1.0.0" provider-name="cuadedanh">
-    <extension point="xbmc.addon.repository" name="Cuadedanhs` Repo">
-        <dir>
-            <info compressed="false">https://cuadedanh.github.io/addons.xml</info>
-            <checksum>https://cuadedanh.github.io/addons.xml.md5</checksum>
-            <datadir zip="true">https://cuadedanh.github.io</datadir>
-        </dir>
-    </extension>
-    <extension point="xbmc.addon.metadata">
-        <summary lang="vi">Kho lưu trữ Addon Kodi của tôi</summary>
-        <description lang="vi">Cung cấp các addon xem phim và hỗ trợ tiếng Việt mượt mà trên Kodi.</description>
-        <platform>all</platform>
-        <assets>
-            <icon>icon.png</icon>
-            <fanart>fanart.jpg</fanart>
-        </assets>
-    </extension>
+<addon id="repository.cuadedanh" name="repo cuadedanh" version="1.0.0" provider-name="cuadedanh">
+<extension point="xbmc.addon.repository" name="repository.cuadedanh">
+<dir>
+<info compressed="false">https://raw.githubusercontent.com/cuadedanh/cuadedanh.github.io/main/addons.xml</info>
+<checksum>https://raw.githubusercontent.com/cuadedanh/cuadedanh.github.io/main/addons.xml.md5</checksum>
+<datadir zip="true">https://raw.githubusercontent.com/cuadedanh/cuadedanh.github.io/main/</datadir>
+</dir>
+</extension>
+<extension point="xbmc.addon.metadata">
+<summary>cuadedanh</summary>
+<description>cuadedanh</description>
+<disclaimer>cuadedanh</disclaimer>
+<platform>all</platform>
+<assets>
+<icon>icon.png</icon>
+<fanart>icon.jpg</fanart>
+</assets>
+</extension>
 </addon>
 </addons>
