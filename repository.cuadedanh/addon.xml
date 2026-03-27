@@ -2,8 +2,8 @@
 <addon id="repository.cuadedanh" name="cuadedanh" version="1.0.0" provider-name="cuadedanh">
     <extension point="xbmc.addon.repository" name="Cuadedanhs` Repo">
         <dir>
-            <info compressed="false">https://cuadedanh.github.io</info>
-            <checksum>https://cuadedanh.github.io.md5</checksum>
+            <info compressed="false">https://cuadedanh.github.io/addons.xml</info>
+            <checksum>https://cuadedanh.github.io/addons.xml.md5</checksum>
             <datadir zip="true">https://cuadedanh.github.io</datadir>
         </dir>
     </extension>
