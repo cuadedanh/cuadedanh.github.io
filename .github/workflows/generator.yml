@@ -107,4 +107,12 @@ jobs:
           html += "</pre><hr></body></html>"
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(html)
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add addons.xml addons.xml.md5 *.zip index.html
+          git commit -m "Update Repository: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
+          git push
+
           EOF
