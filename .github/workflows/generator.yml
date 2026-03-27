@@ -1,105 +1,61 @@
-name: Kodi Repo & Zip Generator
-
-on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'index.html'
-      - 'addons.xml'
-      - 'addons.xml.md5'
-      - '*.zip'
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Kodi Repo
-        uses: actions/checkout@v4
-
-      - name: Clone MyIMDbFshare Addon
-        run: |
-          # 1. Xóa sạch dấu vết cũ
-          rm -rf temp_addon plugin.video.myimdbfshare
-          
-          # 2. Tải addon về thư mục tạm
-          git clone --depth 1 https://github.com/cuadedanh/plugin.video.myimdbfshare temp_addon
-          
-          # 3. Tìm thư mục chứa file addon.xml (để xử lý trường hợp bị lồng thư mục con)
-          ADDON_PATH=$(find temp_addon -name "addon.xml" -printf '%h' -quit)
-          
-          if [ -z "$ADDON_PATH" ]; then
-            echo "LỖI: Không tìm thấy file addon.xml trong repo nguồn!"
-            exit 1
-          fi
-          
-          # 4. Tạo thư mục đích đúng tên ID
-          mkdir -p plugin.video.myimdbfshare
-          
-          # 5. Copy nội dung từ thư mục chứa addon.xml vào thư mục đích
-          cp -a "$ADDON_PATH"/. plugin.video.myimdbfshare/
-          
-          # 6. Dọn dẹp
-          rm -rf temp_addon
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Auto Zip and Generate Metadata
         run: |
           python - <<EOF
           import os
           import hashlib
           import zipfile
+          import xml.etree.ElementTree as ET
 
-          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5']
+          # Các file và thư mục cần loại bỏ không cho vào Repo
+          exclude = ['.git', '.github', 'index.html', 'README.md', 'LICENSE', 'addons.xml', 'addons.xml.md5', 'temp_addon']
           addons_xml = u"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<addons>\n"
           found_any = False
 
+          # Duyệt qua các thư mục hiện tại
           for dir_name in os.listdir('.'):
               if os.path.isdir(dir_name) and dir_name not in exclude:
                   xml_path = os.path.join(dir_name, 'addon.xml')
                   if os.path.exists(xml_path):
                       found_any = True
-                      print(f"Processing: {dir_name}")
+                      print(f"Đang xử lý: {dir_name}")
+                      
+                      # 1. Đọc nội dung addon.xml để gộp vào file tổng
                       with open(xml_path, 'r', encoding='utf-8') as f:
                           content = f.read()
                           if "<?xml" in content:
                               content = content.split('?>', 1)[-1].strip()
                           addons_xml += content + "\n"
                       
+                      # 2. Tạo file ZIP với cấu trúc chuẩn
                       zip_name = f"{dir_name}.zip"
                       with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                           for root, dirs, files in os.walk(dir_name):
                               for file in files:
-                                  zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(dir_name, '..')))
+                                  file_path = os.path.join(root, file)
+                                  # Archive_name tạo cấu trúc: plugin.video.name/file_trong_addon
+                                  # Điều này cực kỳ quan trọng để Kodi cài đặt thành công
+                                  archive_name = os.path.relpath(file_path, '.')
+                                  zipf.write(file_path, archive_name)
+                      print(f"--> Đã nén thành công: {zip_name}")
 
           addons_xml += u"</addons>\n"
           
+          # 3. Xuất file metadata
           if found_any:
               with open("addons.xml", "w", encoding="utf-8") as f:
                   f.write(addons_xml)
               md5_hash = hashlib.md5(addons_xml.encode('utf-8')).hexdigest()
               with open("addons.xml.md5", "w") as f:
                   f.write(md5_hash)
+              print("--> Đã cập nhật xong addons.xml và md5")
 
+          # 4. Tạo trang web liệt kê file (Tùy chọn)
           all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
           all_zips.sort()
-          html = "<html><head><title>Kodi Repo</title></head><body><h1>Index of /</h1><hr><pre>"
+          html = "<html><head><title>Kodi Repo</title></head><body style='font-family:sans-serif;'><h1>Index of /</h1><hr><pre>"
           for z in all_zips:
               html += f'<a href="{z}">{z}</a>\n'
           html += "</pre><hr></body></html>"
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(html)
           EOF
-
-      - name: Commit and Push
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add addons.xml addons.xml.md5 index.html *.zip
-          # Chỉ commit nếu có thay đổi
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Repo: plugin.video.myimdbfshare" && git push)
