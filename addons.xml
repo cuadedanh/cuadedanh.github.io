@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.myimdbfshare"
        name="My Fshare Finder and play"
-       version="1.15.0"
+       version="1.8.0"
        provider-name="cuadedanh@gmail.com">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
