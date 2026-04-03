@@ -98,21 +98,35 @@ jobs:
                   f.write(md5_hash)
               print("--> Đã cập nhật xong addons.xml và md5")
 
-          # 4. Tạo trang web liệt kê file (Tùy chọn)
-          all_zips = [f for f in os.listdir('.') if f.endswith('.zip')]
-          all_zips.sort()
-          html = "<html><head><title>Kodi Repo</title></head><body style='font-family:sans-serif;'><h1>Index of /</h1><hr><pre>"
+          # 4. Tạo trang web liệt kê file (Index tất cả file zip trong thư mục addon)
+          import glob
+          
+          # Tìm tất cả file .zip bên trong thư mục addon
+          # Lệnh này sẽ tìm cả ở thư mục gốc và các thư mục con như plugin.video.myimdbfshare/
+          target_dir = 'plugin.video.myimdbfshare'
+          all_zips = []
+          
+          if os.path.exists(target_dir):
+              # Lấy tất cả file zip bên trong thư mục addon cụ thể
+              for root, dirs, files in os.walk(target_dir):
+                  for file in files:
+                      if file.endswith(".zip"):
+                          # Tạo đường dẫn tương đối để làm link href
+                          relative_path = os.path.relpath(os.path.join(root, file), '.')
+                          all_zips.append(relative_path)
+
+          # Thêm các file zip ở thư mục gốc (nếu có) vào danh sách index
+          root_zips = [f for f in os.listdir('.') if f.endswith('.zip') and os.path.isfile(f)]
+          all_zips.extend(root_zips)
+          
+          # Loại bỏ trùng lặp và sắp xếp
+          all_zips = sorted(list(set(all_zips)))
+
+          html = "<html><head><title>Kodi Repo Index</title></head><body style='font-family:sans-serif;'><h1>Index of Addons</h1><hr><pre>"
           for z in all_zips:
+              # Hiển thị tên file gọn gàng hơn trong danh sách
               html += f'<a href="{z}">{z}</a>\n'
           html += "</pre><hr></body></html>"
+          
           with open("index.html", "w", encoding="utf-8") as f:
               f.write(html)
-          EOF
-      - name: Commit and Push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add addons.xml addons.xml.md5 *.zip index.html
-          git commit -m "Update Repository: $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
-          git push
-
